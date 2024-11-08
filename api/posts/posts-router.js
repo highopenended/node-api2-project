@@ -21,23 +21,22 @@ router.get('/', (req, res) => {
 });
 
 // GET: Returns a user by ID
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     const id = req.params.id
-    if(id){
-        Post.findById(id)
-        .then((user)=>{
-            res.status(200).json(user)
-        })
-        .catch((err) => {
-            res.status(500).json({
-              message: "The post information could not be retrieved",
-              err: err.message,
-              stack: err.stack,
-            });
-          });
-    } else{        
-        res.status(404).json("The post with the specified ID does not exist")
-    }
+
+    try{
+        const possiblePost= await Post.findById(id)
+        if(!possiblePost){
+            return res.status(404).json({message:"does not exist"});
+        }
+        res.status(200).json(possiblePost); // Post exists, send it in the response
+    } catch(err){
+        res.status(500).json({
+            message: "error getting posts",
+            err: err.message,
+            stack: err.stack,
+        });
+    }    
 });
 
 
@@ -63,46 +62,72 @@ router.post('/', async (req, res) => {
 
 // PUT: Make a change to an existing post
 router.put('/:id', async (req, res) => {
-    const {id} = req.params.id
-    if(id){
-        Post.findById(id)
-        .then((user)=>{
-            res.status(200).json(user)
-        })
-        .catch((err) => {
+    const id = req.params.id
+    const {title,contents}=req.body
+
+    if(!title || !contents){
+        res.status(400).json({message:"provide title and contents"})
+    }else{
+        try{
+            const adjId= await Post.update(id, req.body)
+            const adjPost = await Post.findById(adjId); 
+            if(!adjPost){
+                return res.status(404).json({message:"does not exist"});
+            }
+            res.status(201).json(adjPost);
+        }catch(err){
             res.status(500).json({
-              message: "The post information could not be retrieved",
-              err: err.message,
-              stack: err.stack,
+                message: "error getting posts",
+                err: err.message,
+                stack: err.stack,
             });
-          });
-    } else{        
-        res.status(404).json("The post with the specified ID does not exist")
+        }
     }
 });
-
-
-
 
 // GET: Returns an array of comment of a user defined by ID
-router.get('/:id/comments', (req, res) => {
+router.get('/:id/comments', async (req, res) => {
     const id = req.params.id
-    if(id){
-        Post.findById(id)
-        .then((user)=>{
-            res.status(200).json(user)
-        })
-        .catch((err) => {
-            res.status(500).json({
-              message: "error getting posts",
-              err: err.message,
-              stack: err.stack,
-            });
-          });
-    } else{        
-        res.status(404).json("No ID")
+    try{
+        const possiblePost= await Post.findById(id)
+        const comments = await Post.findPostComments(id)
+        if(!possiblePost || !comments){
+            return res.status(404).json({message:"does not exist"});
+        }
+
+        res.status(200).json(comments); // Post exists, send it in the response
+    } catch(err){
+        res.status(500).json({
+            message: "error getting posts",
+            err: err.message,
+            stack: err.stack,
+        });
     }
 });
+
+router.delete('/:id', async (req, res) => {
+    const id=req.params.id
+    try{
+        const possiblePost= await Post.findById(id)
+        const deletedPost= await Post.remove(id)
+
+        if(!deletedPost || !possiblePost){
+            return res.status(404).json({message:"does not exist"});
+        }
+
+        res.status(200).json(possiblePost); // Post exists, send it in the response
+    } catch(err){
+        res.status(500).json({
+            message: "error getting posts",
+            err: err.message,
+            stack: err.stack,
+        });
+    }
+})
+
+
+
+
 
 
 router.post('/', (req, res) => {
