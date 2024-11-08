@@ -2,6 +2,7 @@
 // require your posts router and connect it here
 const express = require('express');
 const server = express();
+server.use(express.json())
 
 server.get('/', (req, res) => {
     res.send('Welcome to the API!');
@@ -10,7 +11,7 @@ server.get('/', (req, res) => {
 const postsRoutes = require('./posts/posts-router');
 
 // server.use('/', defaultRoute);
-server.use('/posts', postsRoutes);
+server.use('/api/posts', postsRoutes);
 
 module.exports = server;
 
